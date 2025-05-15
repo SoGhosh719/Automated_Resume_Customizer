@@ -27,12 +27,12 @@ Return ONLY the tailored resume in bullet point format.
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.4,
+        "temperature": 0.4
     }
 
     try:
         response = requests.post(
-            "https://api.fireworks.ai/inference/v1/completions/chat",
+            "https://api.fireworks.ai/inference/v1/chat/completions",
             json=payload,
             headers=headers
         )
