@@ -1,10 +1,9 @@
-import openai
+import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-client = openai.OpenAI()
-
-def generate_custom_resume(resume_text, job_description, model="gpt-4o"):
+# Sends prompts to local Ollama model (http://localhost:11434)
+def generate_custom_resume(resume_text, job_description):
     prompt = f"""
 You are an expert career coach and resume optimizer. Your task is to rewrite the resume to align with the job description provided, using action verbs, ATS-friendly keywords, and concise phrasing.
 
@@ -17,16 +16,14 @@ Job Description:
 Return ONLY the tailored resume in bullet point format.
 """
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.4
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={"model": "mistral", "prompt": prompt, "stream": False}
         )
-        return response.choices[0].message.content.strip()
-    except openai.RateLimitError:
-        return "⚠️ OpenAI rate limit exceeded. Please wait a few minutes and try again."
+        result = response.json()
+        return result.get("response", "").strip()
     except Exception as e:
-        return f"⚠️ Error: {str(e)}"
+        return f"⚠️ Error calling local Mistral model: {str(e)}"
 
 def compute_match_score(resume_text, job_description):
     vectorizer = TfidfVectorizer()
