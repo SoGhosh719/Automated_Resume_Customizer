@@ -1,4 +1,3 @@
-# resume_parser.py
 import PyPDF2
 import docx
 
@@ -20,4 +19,4 @@ def extract_resume_text(uploaded_file):
     elif uploaded_file.name.endswith(".docx"):
         return extract_text_from_docx(uploaded_file)
     else:
-        raise ValueError("Unsupported file type. Please upload a PDF or DOCX file.")
+        raise ValueError("Unsupported file type. Upload PDF or DOCX.")
