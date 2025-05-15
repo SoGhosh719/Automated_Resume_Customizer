@@ -2,7 +2,7 @@ import openai
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-client = openai.OpenAI()  # Will use OPENAI_API_KEY from environment
+client = openai.OpenAI()
 
 def generate_custom_resume(resume_text, job_description, model="gpt-4o"):
     prompt = f"""
@@ -16,12 +16,17 @@ Job Description:
 
 Return ONLY the tailored resume in bullet point format.
 """
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4
+        )
+        return response.choices[0].message.content.strip()
+    except openai.RateLimitError:
+        return "⚠️ OpenAI rate limit exceeded. Please wait a few minutes and try again."
+    except Exception as e:
+        return f"⚠️ Error: {str(e)}"
 
 def compute_match_score(resume_text, job_description):
     vectorizer = TfidfVectorizer()
