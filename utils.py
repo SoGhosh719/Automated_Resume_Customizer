@@ -2,7 +2,7 @@ import openai
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-client = openai.OpenAI()  # Uses your OPENAI_API_KEY from env
+client = openai.OpenAI()  # Will use OPENAI_API_KEY from environment
 
 def generate_custom_resume(resume_text, job_description, model="gpt-4o"):
     prompt = f"""
