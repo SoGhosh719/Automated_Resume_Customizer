@@ -24,14 +24,14 @@ Return ONLY the tailored resume in bullet point format.
     }
 
     payload = {
-        "model": "accounts/fireworks/models/mixtral-8x7b-instruct",  # Public hosted
+        "model": "accounts/fireworks/models/mixtral-8x7b-instruct",  # ✅ Public model that works
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4
     }
 
     try:
         response = requests.post(
-            "https://api.fireworks.ai/inference/v1/chat/completions",
+            "https://api.fireworks.ai/chat/completions",
             json=payload,
             headers=headers
         )
