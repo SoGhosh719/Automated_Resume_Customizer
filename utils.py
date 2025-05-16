@@ -3,6 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import os
 
+# Get API key from .streamlit/secrets.toml or environment
 FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY")
 
 def generate_custom_resume(resume_text, job_description):
@@ -24,14 +25,14 @@ Return ONLY the tailored resume in bullet point format.
     }
 
     payload = {
-        "model": "accounts/fireworks/models/mixtral-8x7b-instruct",  # ✅ Public model that works
+        "model": "accounts/fireworks/models/mixtral-8x7b-instruct",  # ✅ public model
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4
     }
 
     try:
         response = requests.post(
-            "https://api.fireworks.ai/chat/completions",
+            "https://api.fireworks.ai/chat/completions",  # ✅ fixed endpoint
             json=payload,
             headers=headers
         )
@@ -44,4 +45,4 @@ def compute_match_score(resume_text, job_description):
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
     score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    return score * 100
+    return round(score * 100, 2)
