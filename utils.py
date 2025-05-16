@@ -4,9 +4,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import os
 
 FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY")
-MODEL = "accounts/fireworks/models/mixtral-8x7b-instruct"
 
-def generate_custom_resume(resume_text, job_description, model=MODEL):
+def generate_custom_resume(resume_text, job_description):
     prompt = f"""You are an expert career coach and resume optimizer.
 Your task is to rewrite the resume to align with the job description provided, using action verbs, ATS-friendly keywords, and concise phrasing.
 
@@ -25,7 +24,7 @@ Return ONLY the tailored resume in bullet point format.
     }
 
     payload = {
-        "model": model,
+        "model": "accounts/fireworks/models/mixtral-8x7b-instruct",  # Public hosted
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.4
     }
