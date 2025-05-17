@@ -32,7 +32,7 @@ Return ONLY the tailored resume in bullet point format.
 
     try:
         response = requests.post(
-            "https://api.fireworks.ai/chat/completions",  # ✅ fixed endpoint
+            "https://api.fireworks.ai/inference/v1/chat/completions",  # ✅ fixed endpoint
             json=payload,
             headers=headers
         )
