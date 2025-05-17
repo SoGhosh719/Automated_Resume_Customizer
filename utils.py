@@ -1,14 +1,11 @@
-import requests
+from huggingface_hub import InferenceClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import os
 
-# Get API key from .streamlit/secrets.toml or environment
-FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY")
+client = InferenceClient(model="HuggingFaceH4/zephyr-7b-beta")  # free, public model
 
 def generate_custom_resume(resume_text, job_description):
-    prompt = f"""You are an expert career coach and resume optimizer.
-Your task is to rewrite the resume to align with the job description provided, using action verbs, ATS-friendly keywords, and concise phrasing.
+    prompt = f"""You are an expert resume writer. Rewrite the following resume to fit the job description. Use bullet points, action verbs, and align it with the job role.
 
 Resume:
 {resume_text}
@@ -16,30 +13,14 @@ Resume:
 Job Description:
 {job_description}
 
-Return ONLY the tailored resume in bullet point format.
+Output only the tailored resume in bullet format.
 """
 
-    headers = {
-        "Authorization": f"Bearer {FIREWORKS_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "model": "accounts/fireworks/models/mixtral-8x7b-instruct",  # ✅ public model
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.4
-    }
-
     try:
-        response = requests.post(
-            "https://api.fireworks.ai/inference/v1/chat/completions",  # ✅ fixed endpoint
-            json=payload,
-            headers=headers
-        )
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"].strip()
+        response = client.text_generation(prompt, max_new_tokens=500, temperature=0.4)
+        return response.strip()
     except Exception as e:
-        return f"⚠️ Error contacting Fireworks AI: {str(e)}"
+        return f"⚠️ Hugging Face API error: {str(e)}"
 
 def compute_match_score(resume_text, job_description):
     vectorizer = TfidfVectorizer()

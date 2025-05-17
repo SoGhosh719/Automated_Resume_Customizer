@@ -1,7 +1,5 @@
 streamlit
-PyMuPDF
 scikit-learn
-requests
 PyPDF2
 python-docx
-fpdf
+huggingface_hub
