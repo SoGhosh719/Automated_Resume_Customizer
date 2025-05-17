@@ -1,8 +1,12 @@
+import os
 from huggingface_hub import InferenceClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-client = InferenceClient(model="HuggingFaceH4/zephyr-7b-beta")  # free, public model
+client = InferenceClient(
+    model="HuggingFaceH4/zephyr-7b-beta",
+    token=os.getenv("HUGGINGFACE_TOKEN")  # 🔐 pulls from .streamlit/secrets.toml
+)
 
 def generate_custom_resume(resume_text, job_description):
     prompt = f"""You are an expert resume writer. Rewrite the following resume to fit the job description. Use bullet points, action verbs, and align it with the job role.
