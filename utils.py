@@ -24,6 +24,35 @@ except LookupError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Standalone compute_match_score function
+@st.cache_data
+def compute_match_score(resume_text, job_description, sentence_model, stop_words):
+    """Compute match score using TF-IDF and semantic similarity."""
+    try:
+        # Clean text (replicating ResumeMatcher.clean_text)
+        def clean_text(text):
+            if not text or not isinstance(text, str):
+                return ""
+            text = text.lower()
+            text = re.sub(r'[^\w\s]', ' ', text)
+            text = re.sub(r'\s+', ' ', text.strip())
+            tokens = word_tokenize(text)
+            tokens = [token for token in tokens if token not in stop_words]
+            return ' '.join(tokens)
+
+        resume_text = clean_text(resume_text)
+        job_description = clean_text(job_description)
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
+        tfidf_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        embeddings = sentence_model.encode([resume_text, job_description], convert_to_tensor=True)
+        semantic_score = util.cos_sim(embeddings[0], embeddings[1]).item()
+        combined_score = 0.6 * tfidf_score + 0.4 * semantic_score
+        return round(combined_score * 100, 2)
+    except Exception as e:
+        logger.warning(f"Match score calculation failed: {str(e)}")
+        return 0.0
+
 class ResumeMatcher:
     def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=1500, temperature=0.3):
         """Initialize the ResumeMatcher with configurable parameters."""
@@ -112,22 +141,9 @@ Job Description:
             logger.error(f"API call failed: {str(e)}")
             raise
 
-    @st.cache_data
     def compute_match_score(self, resume_text, job_description):
-        """Compute match score using TF-IDF and semantic similarity."""
-        try:
-            resume_text = self.clean_text(resume_text)
-            job_description = self.clean_text(job_description)
-            vectorizer = TfidfVectorizer()
-            tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
-            tfidf_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-            embeddings = self.sentence_model.encode([resume_text, job_description], convert_to_tensor=True)
-            semantic_score = util.cos_sim(embeddings[0], embeddings[1]).item()
-            combined_score = 0.6 * tfidf_score + 0.4 * semantic_score
-            return round(combined_score * 100, 2)
-        except Exception as e:
-            logger.warning(f"Match score calculation failed: {str(e)}")
-            return 0.0
+        """Compute match score using standalone function."""
+        return compute_match_score(resume_text, job_description, self.sentence_model, self.stop_words)
 
     def extract_resume_text(self, resume_file):
         """Extract text from PDF or DOCX resume with file size validation."""
