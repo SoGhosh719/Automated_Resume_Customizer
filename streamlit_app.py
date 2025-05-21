@@ -4,6 +4,7 @@ from utils import generate_custom_resume, compute_match_score
 from fpdf import FPDF
 import unicodedata
 from io import BytesIO
+import traceback
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="AI Resume Customizer", layout="wide")
@@ -29,9 +30,8 @@ def get_pdf_download_button(text, filename):
     for line in cleaned_text.split("\n"):
         pdf.multi_cell(0, 10, line)
 
-    buffer = BytesIO()
-    pdf.output(buffer)
-    buffer.seek(0)
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')  # Fix: Generate PDF as string
+    buffer = BytesIO(pdf_bytes)  # Wrap string in BytesIO for Streamlit
 
     st.download_button(
         label="📥 Download Customized Resume as PDF",
@@ -52,17 +52,19 @@ if resume_file and job_description:
             else:
                 score = compute_match_score(resume_text, job_description)
 
-                st.markdown("### 🌟 Match Score")
-                st.metric(label="Resume vs JD Match", value=f"{score:.2f}%")
+                st.markdown("### 🌟 Resume vs Job Description Match")
+                st.metric(label="Match Score", value=f"{score:.2f}%")
 
-                st.markdown("### 📝 Customized Resume")
-                st.text_area("Output", value=tailored_resume, height=500)
+                st.markdown("### 📝 Customized Resume Output")
+                st.text_area("Tailored Resume", value=tailored_resume, height=500)
 
                 get_pdf_download_button(tailored_resume, "Customized_Resume.pdf")
+
         except Exception as e:
-            st.error(f"An unexpected error occurred: {str(e)}")
+            st.error("❌ An unexpected error occurred.")
+            st.text(traceback.format_exc())  # Show traceback for dev/debugging
 
 elif resume_file and not job_description:
-    st.warning("Please paste the job description to begin analysis.")
+    st.warning("⚠️ Please paste the job description to begin analysis.")
 elif job_description and not resume_file:
-    st.warning("Please upload a resume to begin analysis.")
+    st.warning("⚠️ Please upload a resume to begin analysis.")
