@@ -1,11 +1,12 @@
-import os
+import streamlit as st
 from huggingface_hub import InferenceClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# ✅ Pull token from Streamlit secrets
 client = InferenceClient(
     model="HuggingFaceH4/zephyr-7b-beta",
-    token=os.getenv("HUGGINGFACE_TOKEN")  # 🔐 pulls from .streamlit/secrets.toml
+    token=st.secrets["HUGGINGFACE_TOKEN"]
 )
 
 def generate_custom_resume(resume_text, job_description):
@@ -21,7 +22,11 @@ Output only the tailored resume in bullet format.
 """
 
     try:
-        response = client.text_generation(prompt, max_new_tokens=500, temperature=0.4)
+        response = client.text_generation(
+            prompt=prompt,
+            max_new_tokens=500,
+            temperature=0.4
+        )
         return response.strip()
     except Exception as e:
         return f"⚠️ Hugging Face API error: {str(e)}"
