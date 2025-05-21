@@ -73,8 +73,8 @@ def main():
             except ValueError as ve:
                 st.error(f"❌ {str(ve)}")
             except Exception as e:
-                st.error("❌ An unexpected error occurred during analysis. Please try again.")
-                st.exception(e)
+                st.error("❌ An unexpected error occurred during analysis. Please try again later or contact support.")
+                logger.error(f"Unexpected error: {str(e)}")
 
     elif resume_file:
         st.warning("⚠️ Please paste the job description to begin analysis.")
