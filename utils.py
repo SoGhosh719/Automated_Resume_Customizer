@@ -5,39 +5,77 @@ import re
 import streamlit as st
 import traceback
 
+# Initialize Hugging Face client
 client = InferenceClient(
     model="HuggingFaceH4/zephyr-7b-beta",
     token=st.secrets["HUGGINGFACE_TOKEN"]
 )
 
+# Clean input text
 def clean_text(text):
     return re.sub(r'\s+', ' ', text.strip()) if text else ""
 
+# 🔍 Expert-level resume-job fit review function
 def review_resume_for_job_fit(resume_text, job_description):
     system_prompt = (
-        "You are a professional career coach and resume reviewer. Your task is to evaluate how well a candidate’s resume "
-        "aligns with a specific job description. Identify strengths, gaps, and suggest what should be added or changed. "
-        "Do not rewrite the resume. Provide clear bullet points under each section."
+        "You are an executive career strategist and resume reviewer working with top consulting firms and tech companies. "
+        "You specialize in analyzing resumes against job descriptions and offering detailed, structured, and actionable feedback "
+        "that improves alignment, clarity, and impact. You DO NOT rewrite resumes. You provide a feedback report using a consulting-level format."
     )
 
     user_prompt = f"""
+You are given a resume and a job description. Your task is to critically evaluate the resume in relation to the job description.
+
+Return the response using the following sections and formatting:
+
+---
+
+### ✅ 1. OVERALL FIT ASSESSMENT
+Summarize if the resume is a strong, moderate, or weak match. Mention the tone, relevance, and completeness.
+
+---
+
+### 🔍 2. STRENGTHS MAPPED TO ROLE
+Present a markdown table:
+
+| **Job Requirement** | **Resume Evidence** |
+|---------------------|---------------------|
+| Requirement 1       | Evidence or phrase from resume |
+| Requirement 2       | ... |
+
+Only include 5–7 key points. Be concise and insightful.
+
+---
+
+### ❗ 3. GAPS OR UNDEREMPHASIZED AREAS
+List job qualifications or expectations that are not clearly addressed in the resume. Focus on what's missing or weakly expressed.
+
+- Example: No mention of stakeholder communication or reporting
+- Example: Lacks cloud security tools (e.g., IAM, encryption, authentication)
+
+---
+
+### 🛠 4. STRATEGIC REFRAMING SUGGESTIONS
+Advise how to reposition or rewrite existing experiences to better align with the role. Recommend ways to showcase transferable skills or adjacent expertise.
+
+- Reframe academic mentoring as project leadership
+- Reposition digital marketing simulations as data-driven performance tracking
+
+---
+
+### 💡 5. HIGHLIGHTS FOR COVER LETTER / INTERVIEW
+Tell the user what to emphasize to stand out.
+
+- Emphasize your multi-domain background across chemistry, analytics, and AI
+- Showcase your use of cloud/AI tools with secure data handling
+
+---
+
 Resume:
 \"\"\"{resume_text}\"\"\"
 
 Job Description:
 \"\"\"{job_description}\"\"\"
-
-### 1. OVERALL FIT
-(A brief paragraph summarizing the match)
-
-### 2. STRENGTHS
-- Bullet points listing aspects of the resume that are well-aligned with the job
-
-### 3. GAPS / MISSING INFORMATION
-- Bullet points listing key responsibilities, qualifications, or tools from the job description that are missing or underemphasized
-
-### 4. SUGGESTIONS
-- Specific, actionable suggestions for improving the resume to better align with the job
 """
 
     try:
@@ -46,8 +84,8 @@ Job Description:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=900,
-            temperature=0.3
+            max_tokens=1200,
+            temperature=0.25
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -55,6 +93,7 @@ Job Description:
         st.text(traceback.format_exc())
         return f"⚠️ Error: {str(e)}"
 
+# 🔢 Text similarity match score
 def compute_match_score(resume_text, job_description):
     try:
         resume_text = clean_text(resume_text)
