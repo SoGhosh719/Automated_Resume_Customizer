@@ -3,6 +3,7 @@ from huggingface_hub import InferenceClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Initialize the Hugging Face client with Zephyr
 client = InferenceClient(
     model="HuggingFaceH4/zephyr-7b-beta",
     token=st.secrets["HUGGINGFACE_TOKEN"]
@@ -10,14 +11,14 @@ client = InferenceClient(
 
 def generate_custom_resume(resume_text, job_description):
     system_prompt = (
-        "You are an expert resume writer. Your task is to rewrite the user's resume "
-        "to match the provided job description using action verbs, bullet points, and keywords "
-        "from the job. Make the resume ATS-friendly and role-specific. Format the output professionally "
-        "as a list of resume bullet points only."
+        "You are a professional resume writer and career strategist. Your goal is to rewrite the candidate’s resume "
+        "to maximize alignment with the given job description. Use clear, compelling bullet points, embed keywords from the job, "
+        "and maintain a professional tone suitable for applicant tracking systems (ATS). Focus on role-relevant achievements, "
+        "skills, and experiences without copying the job description directly. Format the output in ATS-friendly bullet points."
     )
 
     user_prompt = f"""
-Here is a resume and a job description.
+The following content includes a candidate's resume and the job description for the role they are applying to.
 
 Resume:
 \"\"\"
@@ -29,7 +30,7 @@ Job Description:
 {job_description}
 \"\"\"
 
-Rewrite the resume so it aligns with the job. Return only the improved resume in bullet points.
+Please rewrite the resume to emphasize how the candidate’s experience aligns with the role. Output only the rewritten resume in bullet-point format with no introductory or closing remarks.
 """
 
     try:
@@ -38,8 +39,8 @@ Rewrite the resume so it aligns with the job. Return only the improved resume in
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=600,
-            temperature=0.4
+            max_tokens=700,
+            temperature=0.3
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
