@@ -2,13 +2,39 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import re
+import traceback
 
-# Initialize Hugging Face client
+# ---------------------------
+# Hugging Face Client Setup
+# ---------------------------
 client = InferenceClient(
     model="HuggingFaceH4/zephyr-7b-beta",
     token=st.secrets["HUGGINGFACE_TOKEN"]
 )
 
+# ---------------------------
+# Helper: Clean Input Text
+# ---------------------------
+def clean_text(text):
+    text = re.sub(r'\s+', ' ', text)  # Collapse multiple spaces/newlines
+    return text.strip()
+
+# ---------------------------
+# Match Score Labeling
+# ---------------------------
+def label_match_score(score):
+    if score >= 75:
+        return "🟢 Strong Match"
+    elif score >= 50:
+        return "🟡 Moderate Match"
+    else:
+        return "🔴 Weak Match"
+
+# ---------------------------
+# Resume Evaluation via LLM
+# ---------------------------
+@st.cache_data(show_spinner=False)
 def review_resume_for_job_fit(resume_text, job_description):
     """
     Uses Zephyr to evaluate how well the resume aligns with the job description.
@@ -57,13 +83,22 @@ Respond only in the structure above.
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
+        st.error("⚠️ Hugging Face API error occurred.")
+        st.text(traceback.format_exc())  # Optional: Show traceback for debugging
         return f"⚠️ Hugging Face API error:\n{str(e)}"
 
+# ---------------------------
+# Match Score Calculator
+# ---------------------------
 def compute_match_score(resume_text, job_description):
     """
     Computes cosine similarity-based match score using TF-IDF vectors.
+    Returns a float percentage score.
     """
     try:
+        resume_text = clean_text(resume_text)
+        job_description = clean_text(job_description)
+        
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
         score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
