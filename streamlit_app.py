@@ -1,21 +1,18 @@
 import streamlit as st
 from resume_parser import extract_resume_text
-from utils import generate_custom_resume, review_resume_for_job_fit, compute_match_score
+from utils import generate_custom_resume, compute_match_score
 from fpdf import FPDF
 import unicodedata
 from io import BytesIO
 
 # ---------- PAGE CONFIG ----------
-st.set_page_config(page_title="AI Resume Assistant", layout="wide")
-st.title("🧠 Smart Resume Tailor & Review (Fireworks + Mixtral)")
-st.write("Upload your resume and a job description to get a tailored version, match score, and detailed feedback.")
+st.set_page_config(page_title="AI Resume Customizer", layout="wide")
+st.title("🤖 Automated Resume Tailor (Hugging Face Model)")
+st.write("Upload your resume and a job description to get a customized version and a match score.")
 
 # ---------- FILE UPLOAD ----------
 resume_file = st.file_uploader("📄 Upload Resume (PDF or DOCX)", type=["pdf", "docx"])
 job_description = st.text_area("📝 Paste the Job Description")
-
-# ---------- MODE SWITCH ----------
-mode = st.radio("Choose Mode", ["Tailor Resume", "Review Resume Fit"])
 
 # ---------- HELPER: UNICODE CLEANER ----------
 def clean_unicode(text):
@@ -37,7 +34,7 @@ def get_pdf_download_button(text, filename):
     buffer.seek(0)
 
     st.download_button(
-        label="📅 Download Output as PDF",
+        label="📥 Download Customized Resume as PDF",
         data=buffer,
         file_name=filename,
         mime="application/pdf"
@@ -45,28 +42,22 @@ def get_pdf_download_button(text, filename):
 
 # ---------- MAIN APP LOGIC ----------
 if resume_file and job_description:
-    with st.spinner("⏳ Processing your resume..."):
+    with st.spinner("⏳ Tailoring your resume..."):
         resume_text = extract_resume_text(resume_file)
-        match_score = compute_match_score(resume_text, job_description)
+        tailored_resume = generate_custom_resume(resume_text, job_description)
 
-        if mode == "Tailor Resume":
-            output_text = generate_custom_resume(resume_text, job_description)
-            title = "📝 Customized Resume"
-            filename = "Customized_Resume.pdf"
+        if tailored_resume.startswith("⚠️ Error"):
+            st.error(tailored_resume)
         else:
-            output_text = review_resume_for_job_fit(resume_text, job_description)
-            title = "📒 Resume Review Feedback"
-            filename = "Resume_Review_Feedback.pdf"
+            score = compute_match_score(resume_text, job_description)
 
-        if output_text.startswith("⚠️ Error"):
-            st.error(output_text)
-        else:
             st.markdown("### 🌟 Match Score")
-            st.metric(label="Resume vs JD Match", value=f"{match_score:.2f}%")
+            st.metric(label="Resume vs JD Match", value=f"{score:.2f}%")
 
-            st.markdown(f"### {title}")
-            st.text_area("Output", value=output_text, height=500)
-            get_pdf_download_button(output_text, filename)
+            st.markdown("### 📝 Customized Resume")
+            st.text_area("Output", value=tailored_resume, height=500)
+
+            get_pdf_download_button(tailored_resume, "Customized_Resume.pdf")
 
 elif resume_file and not job_description:
     st.warning("Please paste the job description to begin analysis.")
