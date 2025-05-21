@@ -9,16 +9,15 @@ client = InferenceClient(
     token=st.secrets["HUGGINGFACE_TOKEN"]
 )
 
-def generate_custom_resume(resume_text, job_description):
+def review_resume_for_job_fit(resume_text, job_description):
     system_prompt = (
-        "You are a senior resume writer and career strategist with expertise in ATS optimization. "
-        "Your job is to rewrite resumes to align closely with job descriptions using structured sections. "
-        "Incorporate relevant keywords, tailor experience to reflect the job’s requirements, and format the resume clearly. "
-        "Avoid copying the job description or introducing fluff."
+        "You are a professional career coach and resume reviewer. Your task is to evaluate how well a candidate’s resume "
+        "aligns with a specific job description. Identify strengths, gaps, and suggest what should be added or changed. "
+        "Do not rewrite the resume. Provide clear bullet points under each section."
     )
 
     user_prompt = f"""
-Below is a candidate's original resume and a job description they are applying for.
+Below is a candidate's resume and the job description they are applying for.
 
 Resume:
 \"\"\"
@@ -30,21 +29,21 @@ Job Description:
 {job_description}
 \"\"\"
 
-Rewrite the resume so that it is aligned with the job and presented in the following structured format:
+Please evaluate the resume in relation to the job and return the following:
 
-### PROFESSIONAL SUMMARY
-(A 2–3 line overview of the candidate's suitability for the role)
+### 1. OVERALL FIT
+(A brief paragraph summarizing the match)
 
-### KEY SKILLS
-- Bullet points of technical and soft skills aligned with the job description
+### 2. STRENGTHS
+- Bullet points listing aspects of the resume that are well-aligned with the job
 
-### EXPERIENCE
-- Rewritten bullet points based on the candidate's experience, highlighting responsibilities and achievements relevant to the job
+### 3. GAPS / MISSING INFORMATION
+- Bullet points listing key responsibilities, qualifications, or tools from the job description that are missing or underemphasized
 
-### EDUCATION
-- Keep the most relevant academic background or certifications
+### 4. SUGGESTIONS
+- Specific, actionable suggestions for improving the resume to better align with the job
 
-Output only the rewritten resume in this structure with no extra commentary.
+Respond only in the structure above.
 """
 
     try:
@@ -54,11 +53,12 @@ Output only the rewritten resume in this structure with no extra commentary.
                 {"role": "user", "content": user_prompt}
             ],
             max_tokens=900,
-            temperature=0.25
+            temperature=0.3
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"⚠️ Hugging Face API error: {str(e)}"
+
 
 def compute_match_score(resume_text, job_description):
     vectorizer = TfidfVectorizer()
