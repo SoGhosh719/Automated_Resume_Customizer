@@ -1,9 +1,9 @@
 streamlit
 scikit-learn
+fpdf
 PyPDF2
 python-docx
 huggingface_hub
 nltk
 sentence-transformers
 retrying
-weasyprint
