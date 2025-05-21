@@ -21,11 +21,11 @@ except LookupError:
     nltk.download('stopwords')
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class ResumeMatcher:
-    def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=1500, temperature=0.3):
+    def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=2000, temperature=0.3):
         """Initialize the ResumeMatcher with configurable parameters."""
         self.model_name = model_name
         self.max_tokens = max_tokens
@@ -35,9 +35,10 @@ class ResumeMatcher:
         self.stop_words = set(stopwords.words('english'))
         try:
             self.client = InferenceClient(model=self.model_name, token=st.secrets["HUGGINGFACE_TOKEN"])
+            logger.debug("Hugging Face client initialized successfully")
         except Exception as e:
             st.error(f"Failed to initialize Hugging Face client: {str(e)}")
-            logger.error(f"Client initialization error: {str(e)}")
+            logger.error(f"Client initialization error: {str(e)}", exc_info=True)
 
     def clean_text(self, text):
         """Clean and preprocess text for analysis."""
@@ -63,11 +64,23 @@ class ResumeMatcher:
             )
         return True
 
+    def truncate_text(self, text, max_words=2000):
+        """Truncate text to a maximum number of words."""
+        words = text.split()
+        if len(words) > max_words:
+            logger.warning(f"Truncating text from {len(words)} to {max_words} words")
+            return ' '.join(words[:max_words])
+        return text
+
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def review_resume_for_job_fit(self, resume_text, job_description):
         """Evaluate resume fit using Hugging Face API with retry logic."""
         if not self.client:
             raise RuntimeError("Hugging Face client not initialized.")
+        logger.debug("Preparing API call for resume review")
+        # Truncate inputs to prevent context overflow
+        resume_text = self.truncate_text(resume_text, max_words=2000)
+        job_description = self.truncate_text(job_description, max_words=1000)
         system_prompt = (
             "You are a professional career coach and resume reviewer. Your task is to evaluate how well a candidate’s resume "
             "aligns with a job description. Compare the resume’s skills (technical and soft), work experience, education, and "
@@ -99,6 +112,7 @@ Job Description:
 \"\"\"{job_description}\"\"\"
 """
         try:
+            logger.debug(f"Sending API request with {len(resume_text.split())} resume words and {len(job_description.split())} job description words")
             response = self.client.chat_completion(
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -107,9 +121,10 @@ Job Description:
                 max_tokens=self.max_tokens,
                 temperature=self.temperature
             )
+            logger.debug("API response received successfully")
             return response.choices[0].message.content.strip()
         except Exception as e:
-            logger.error(f"API call failed: {str(e)}")
+            logger.error(f"API call failed: {str(e)}", exc_info=True)
             raise
 
     @st.cache_data
@@ -124,6 +139,7 @@ Job Description:
             embeddings = _self.sentence_model.encode([resume_text, job_description], convert_to_tensor=True)
             semantic_score = util.cos_sim(embeddings[0], embeddings[1]).item()
             combined_score = 0.6 * tfidf_score + 0.4 * semantic_score
+            logger.debug(f"Match score computed: TF-IDF={tfidf_score:.2f}, Semantic={semantic_score:.2f}, Combined={combined_score:.2f}")
             return round(combined_score * 100, 2)
         except Exception as e:
             logger.warning(f"Match score calculation failed: {str(e)}")
@@ -145,7 +161,8 @@ Job Description:
                 raise ValueError("Unsupported file type. Please upload a PDF or DOCX file.")
             if not text.strip():
                 raise ValueError("No text could be extracted from the resume.")
+            logger.debug(f"Resume text extracted: {len(text.split())} words")
             return text
         except Exception as e:
-            logger.error(f"File parsing error: {str(e)}")
+            logger.error(f"File parsing error: {str(e)}", exc_info=True)
             raise ValueError(f"Failed to extract text from resume: {str(e)}")
