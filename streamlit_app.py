@@ -31,13 +31,13 @@ def main():
     with col1:
         resume_file = st.file_uploader("📄 Upload Resume (PDF or DOCX)", type=["pdf", "docx"])
     with col2:
-        job_description = st.text_area("📝 Paste Job Description", height=200, help="Enter the job description (max 750 words).")
+        job_description = st.text_area("📝 Paste Job Description", height=200, help="Enter the job description (max 1500 words).")
 
     if resume_file:
         try:
             resume_text = matcher.extract_resume_text(resume_file)
             resume_word_count = len(resume_text.split())
-            st.markdown(f"**Resume Word Count**: {resume_word_count}/3000")
+            st.markdown(f"**Resume Word Count**: {resume_word_count}/5000")
             with st.expander("Preview Extracted Resume Text"):
                 st.text_area("Resume Text", resume_text, height=150, disabled=True)
         except ValueError as ve:
@@ -46,7 +46,7 @@ def main():
 
     if job_description:
         job_word_count = len(job_description.split())
-        st.markdown(f"**Job Description Word Count**: {job_word_count}/750")
+        st.markdown(f"**Job Description Word Count**: {job_word_count}/1500")
 
     if resume_file and job_description:
         with st.spinner("⏳ Analyzing your resume..."):
