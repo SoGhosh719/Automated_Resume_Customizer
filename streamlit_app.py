@@ -1,47 +1,74 @@
 import streamlit as st
 from resume_parser import extract_resume_text
-from utils import review_resume_for_job_fit, compute_match_score
+from utils import generate_custom_resume, review_resume_for_job_fit, compute_match_score
+from fpdf import FPDF
+import unicodedata
+from io import BytesIO
 
-st.set_page_config(page_title="Resume Fit Review", layout="wide")
-st.title("🧠 AI Resume Fit Review Assistant")
+# ---------- PAGE CONFIG ----------
+st.set_page_config(page_title="AI Resume Assistant", layout="wide")
+st.title("🧠 Smart Resume Tailor & Review (Fireworks + Mixtral)")
+st.write("Upload your resume and a job description to get a tailored version, match score, and detailed feedback.")
 
-st.markdown("""
-Welcome! This app helps you improve your resume by:
-- 🔍 Comparing your resume to a specific job description
-- 📋 Giving structured feedback on alignment, strengths, and gaps
-- 🎯 Suggesting improvements to boost your chances
-""")
+# ---------- FILE UPLOAD ----------
+resume_file = st.file_uploader("📄 Upload Resume (PDF or DOCX)", type=["pdf", "docx"])
+job_description = st.text_area("📝 Paste the Job Description")
 
-# Upload and input
-uploaded_file = st.file_uploader("📄 Upload your resume (.pdf or .docx)", type=["pdf", "docx"])
-job_description = st.text_area("📝 Paste the job description here")
+# ---------- MODE SWITCH ----------
+mode = st.radio("Choose Mode", ["Tailor Resume", "Review Resume Fit"])
 
-# Feature toggle
-mode = st.radio("Choose Mode", ["Review Resume Fit", "Tailor Resume (Coming Soon)"])
+# ---------- HELPER: UNICODE CLEANER ----------
+def clean_unicode(text):
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
 
-if uploaded_file and job_description:
-    with st.spinner("🔍 Analyzing your resume..."):
-        resume_text = extract_resume_text(uploaded_file)
-        review_feedback = review_resume_for_job_fit(resume_text, job_description)
-        match_score = compute_match_score(resume_text, job_description)
+# ---------- HELPER: STREAMLIT PDF DOWNLOAD BUTTON ----------
+def get_pdf_download_button(text, filename):
+    cleaned_text = clean_unicode(text)
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=11)
 
-    st.success("✅ Analysis Complete!")
-    
-    st.subheader("🎯 Resume-Job Match Score")
-    st.metric("Match Score", f"{match_score:.2f}%")
+    for line in cleaned_text.split("\n"):
+        pdf.multi_cell(0, 10, line)
 
-    st.subheader("🧾 Resume Review Feedback")
-    st.text_area("What to improve", value=review_feedback, height=500)
+    buffer = BytesIO()
+    pdf.output(buffer)
+    buffer.seek(0)
 
-    # Download option
     st.download_button(
-        label="📥 Download Feedback as .txt",
-        data=review_feedback,
-        file_name="resume_review_feedback.txt",
-        mime="text/plain"
+        label="📅 Download Output as PDF",
+        data=buffer,
+        file_name=filename,
+        mime="application/pdf"
     )
 
-elif uploaded_file and not job_description:
+# ---------- MAIN APP LOGIC ----------
+if resume_file and job_description:
+    with st.spinner("⏳ Processing your resume..."):
+        resume_text = extract_resume_text(resume_file)
+        match_score = compute_match_score(resume_text, job_description)
+
+        if mode == "Tailor Resume":
+            output_text = generate_custom_resume(resume_text, job_description)
+            title = "📝 Customized Resume"
+            filename = "Customized_Resume.pdf"
+        else:
+            output_text = review_resume_for_job_fit(resume_text, job_description)
+            title = "📒 Resume Review Feedback"
+            filename = "Resume_Review_Feedback.pdf"
+
+        if output_text.startswith("⚠️ Error"):
+            st.error(output_text)
+        else:
+            st.markdown("### 🌟 Match Score")
+            st.metric(label="Resume vs JD Match", value=f"{match_score:.2f}%")
+
+            st.markdown(f"### {title}")
+            st.text_area("Output", value=output_text, height=500)
+            get_pdf_download_button(output_text, filename)
+
+elif resume_file and not job_description:
     st.warning("Please paste the job description to begin analysis.")
-elif job_description and not uploaded_file:
+elif job_description and not resume_file:
     st.warning("Please upload a resume to begin analysis.")
