@@ -43,21 +43,24 @@ def get_pdf_download_button(text, filename):
 # ---------- MAIN APP LOGIC ----------
 if resume_file and job_description:
     with st.spinner("⏳ Tailoring your resume..."):
-        resume_text = extract_resume_text(resume_file)
-        tailored_resume = generate_custom_resume(resume_text, job_description)
+        try:
+            resume_text = extract_resume_text(resume_file)
+            tailored_resume = generate_custom_resume(resume_text, job_description)
 
-        if tailored_resume.startswith("⚠️ Error"):
-            st.error(tailored_resume)
-        else:
-            score = compute_match_score(resume_text, job_description)
+            if tailored_resume.startswith("⚠️ Error"):
+                st.error(tailored_resume)
+            else:
+                score = compute_match_score(resume_text, job_description)
 
-            st.markdown("### 🌟 Match Score")
-            st.metric(label="Resume vs JD Match", value=f"{score:.2f}%")
+                st.markdown("### 🌟 Match Score")
+                st.metric(label="Resume vs JD Match", value=f"{score:.2f}%")
 
-            st.markdown("### 📝 Customized Resume")
-            st.text_area("Output", value=tailored_resume, height=500)
+                st.markdown("### 📝 Customized Resume")
+                st.text_area("Output", value=tailored_resume, height=500)
 
-            get_pdf_download_button(tailored_resume, "Customized_Resume.pdf")
+                get_pdf_download_button(tailored_resume, "Customized_Resume.pdf")
+        except Exception as e:
+            st.error(f"An unexpected error occurred: {str(e)}")
 
 elif resume_file and not job_description:
     st.warning("Please paste the job description to begin analysis.")
