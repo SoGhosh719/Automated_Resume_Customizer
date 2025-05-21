@@ -11,14 +11,14 @@ client = InferenceClient(
 
 def generate_custom_resume(resume_text, job_description):
     system_prompt = (
-        "You are a professional resume writer and career strategist. Your goal is to rewrite the candidate’s resume "
-        "to maximize alignment with the given job description. Use clear, compelling bullet points, embed keywords from the job, "
-        "and maintain a professional tone suitable for applicant tracking systems (ATS). Focus on role-relevant achievements, "
-        "skills, and experiences without copying the job description directly. Format the output in ATS-friendly bullet points."
+        "You are a senior resume writer and career strategist with expertise in ATS optimization. "
+        "Your job is to rewrite resumes to align closely with job descriptions using structured sections. "
+        "Incorporate relevant keywords, tailor experience to reflect the job’s requirements, and format the resume clearly. "
+        "Avoid copying the job description or introducing fluff."
     )
 
     user_prompt = f"""
-The following content includes a candidate's resume and the job description for the role they are applying to.
+Below is a candidate's original resume and a job description they are applying for.
 
 Resume:
 \"\"\"
@@ -30,7 +30,21 @@ Job Description:
 {job_description}
 \"\"\"
 
-Please rewrite the resume to emphasize how the candidate’s experience aligns with the role. Output only the rewritten resume in bullet-point format with no introductory or closing remarks.
+Rewrite the resume so that it is aligned with the job and presented in the following structured format:
+
+### PROFESSIONAL SUMMARY
+(A 2–3 line overview of the candidate's suitability for the role)
+
+### KEY SKILLS
+- Bullet points of technical and soft skills aligned with the job description
+
+### EXPERIENCE
+- Rewritten bullet points based on the candidate's experience, highlighting responsibilities and achievements relevant to the job
+
+### EDUCATION
+- Keep the most relevant academic background or certifications
+
+Output only the rewritten resume in this structure with no extra commentary.
 """
 
     try:
@@ -39,8 +53,8 @@ Please rewrite the resume to emphasize how the candidate’s experience aligns w
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=700,
-            temperature=0.3
+            max_tokens=900,
+            temperature=0.25
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
