@@ -9,14 +9,27 @@ client = InferenceClient(
 )
 
 def generate_custom_resume(resume_text, job_description):
-    system_prompt = "You are an expert resume writer. Rewrite the resume to match the job description using bullet points, action verbs, and ATS-friendly language. Return only the tailored resume."
-    
+    system_prompt = (
+        "You are an expert resume writer. Your task is to rewrite the user's resume "
+        "to match the provided job description using action verbs, bullet points, and keywords "
+        "from the job. Make the resume ATS-friendly and role-specific. Format the output professionally "
+        "as a list of resume bullet points only."
+    )
+
     user_prompt = f"""
+Here is a resume and a job description.
+
 Resume:
+\"\"\"
 {resume_text}
+\"\"\"
 
 Job Description:
+\"\"\"
 {job_description}
+\"\"\"
+
+Rewrite the resume so it aligns with the job. Return only the improved resume in bullet points.
 """
 
     try:
@@ -25,7 +38,7 @@ Job Description:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=500,
+            max_tokens=600,
             temperature=0.4
         )
         return response.choices[0].message.content.strip()
