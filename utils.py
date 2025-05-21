@@ -3,13 +3,17 @@ from huggingface_hub import InferenceClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Initialize the Hugging Face client with Zephyr
+# Initialize Hugging Face client
 client = InferenceClient(
     model="HuggingFaceH4/zephyr-7b-beta",
     token=st.secrets["HUGGINGFACE_TOKEN"]
 )
 
 def review_resume_for_job_fit(resume_text, job_description):
+    """
+    Uses Zephyr to evaluate how well the resume aligns with the job description.
+    Returns structured feedback with overall fit, strengths, gaps, and suggestions.
+    """
     system_prompt = (
         "You are a professional career coach and resume reviewer. Your task is to evaluate how well a candidate’s resume "
         "aligns with a specific job description. Identify strengths, gaps, and suggest what should be added or changed. "
@@ -20,14 +24,10 @@ def review_resume_for_job_fit(resume_text, job_description):
 Below is a candidate's resume and the job description they are applying for.
 
 Resume:
-\"\"\"
-{resume_text}
-\"\"\"
+\"\"\"{resume_text}\"\"\"
 
 Job Description:
-\"\"\"
-{job_description}
-\"\"\"
+\"\"\"{job_description}\"\"\"
 
 Please evaluate the resume in relation to the job and return the following:
 
@@ -57,11 +57,17 @@ Respond only in the structure above.
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"⚠️ Hugging Face API error: {str(e)}"
-
+        return f"⚠️ Hugging Face API error:\n{str(e)}"
 
 def compute_match_score(resume_text, job_description):
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
-    score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    return round(score * 100, 2)
+    """
+    Computes cosine similarity-based match score using TF-IDF vectors.
+    """
+    try:
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
+        score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        return round(score * 100, 2)
+    except Exception as e:
+        st.warning(f"⚠️ Match score calculation failed: {str(e)}")
+        return 0.0
