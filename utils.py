@@ -56,10 +56,10 @@ class ResumeMatcher:
             raise ValueError("Resume and job description cannot be empty.")
         resume_words = len(resume_text.split())
         job_words = len(job_description.split())
-        if resume_words > 3000 or job_words > 750:
+        if resume_words > 4000 or job_words > 1000:
             raise ValueError(
                 f"Input exceeds recommended length (resume: {resume_words}/3000 words, "
-                f"job description: {job_words}/750 words). Please shorten the input."
+                f"job description: {job_words}/1000 words). Please shorten the input."
             )
         return True
 
