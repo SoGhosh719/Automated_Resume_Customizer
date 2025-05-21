@@ -8,17 +8,24 @@ import traceback
 # ---------------------------
 # Hugging Face Client Setup
 # ---------------------------
+try:
+    HF_TOKEN = st.secrets["HUGGINGFACE_TOKEN"]
+except KeyError:
+    st.stop()  # Stop the app early if token is missing
+    raise RuntimeError("❌ Hugging Face token not found in Streamlit secrets.")
+
 client = InferenceClient(
     model="HuggingFaceH4/zephyr-7b-beta",
-    token=st.secrets["HUGGINGFACE_TOKEN"]
+    token=HF_TOKEN
 )
 
 # ---------------------------
 # Helper: Clean Input Text
 # ---------------------------
 def clean_text(text):
-    text = re.sub(r'\s+', ' ', text)  # Collapse multiple spaces/newlines
-    return text.strip()
+    if not text:
+        return ""
+    return re.sub(r'\s+', ' ', text).strip()
 
 # ---------------------------
 # Match Score Labeling
@@ -81,10 +88,11 @@ Respond only in the structure above.
             max_tokens=900,
             temperature=0.3
         )
-        return response.choices[0].message.content.strip()
+        content = response.choices[0].message.content if response.choices else ""
+        return content.strip() if content else "⚠️ No response received from the model. Please try again."
     except Exception as e:
         st.error("⚠️ Hugging Face API error occurred.")
-        st.text(traceback.format_exc())  # Optional: Show traceback for debugging
+        st.text(traceback.format_exc())
         return f"⚠️ Hugging Face API error:\n{str(e)}"
 
 # ---------------------------
@@ -98,11 +106,15 @@ def compute_match_score(resume_text, job_description):
     try:
         resume_text = clean_text(resume_text)
         job_description = clean_text(job_description)
-        
+
+        if not resume_text or not job_description:
+            return 0.0
+
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform([resume_text, job_description])
         score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
         return round(score * 100, 2)
     except Exception as e:
         st.warning(f"⚠️ Match score calculation failed: {str(e)}")
+        st.text(traceback.format_exc())
         return 0.0
