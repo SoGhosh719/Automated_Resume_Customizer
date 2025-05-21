@@ -1,7 +1,9 @@
 streamlit
 scikit-learn
-fpdf
 PyPDF2
 python-docx
 huggingface_hub
-unicodedata2
+nltk
+sentence-transformers
+retrying
+weasyprint
