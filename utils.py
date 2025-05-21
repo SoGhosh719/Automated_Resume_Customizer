@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ResumeMatcher:
-    def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=1200, temperature=0.3):
+    def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=1500, temperature=0.3):
         """Initialize the ResumeMatcher with configurable parameters."""
         self.model_name = model_name
         self.max_tokens = max_tokens
@@ -56,10 +56,10 @@ class ResumeMatcher:
             raise ValueError("Resume and job description cannot be empty.")
         resume_words = len(resume_text.split())
         job_words = len(job_description.split())
-        if resume_words > 4000 or job_words > 1000:
+        if resume_words > 5000 or job_words > 1500:
             raise ValueError(
-                f"Input exceeds recommended length (resume: {resume_words}/3000 words, "
-                f"job description: {job_words}/1000 words). Please shorten the input."
+                f"Input exceeds recommended length (resume: {resume_words}/5000 words, "
+                f"job description: {job_words}/1500 words). Please shorten the input."
             )
         return True
 
