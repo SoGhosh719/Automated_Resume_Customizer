@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ResumeMatcher:
-    def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=900, temperature=0.3):
+    def __init__(self, model_name="HuggingFaceH4/zephyr-7b-beta", max_tokens=1200, temperature=0.3):
         """Initialize the ResumeMatcher with configurable parameters."""
         self.model_name = model_name
         self.max_tokens = max_tokens
@@ -56,8 +56,11 @@ class ResumeMatcher:
             raise ValueError("Resume and job description cannot be empty.")
         resume_words = len(resume_text.split())
         job_words = len(job_description.split())
-        if resume_words > 2000 or job_words > 500:
-            raise ValueError("Input exceeds recommended length. Please shorten the resume or job description.")
+        if resume_words > 3000 or job_words > 750:
+            raise ValueError(
+                f"Input exceeds recommended length (resume: {resume_words}/3000 words, "
+                f"job description: {job_words}/750 words). Please shorten the input."
+            )
         return True
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
@@ -69,8 +72,9 @@ class ResumeMatcher:
             "You are a professional career coach and resume reviewer. Your task is to evaluate how well a candidate’s resume "
             "aligns with a job description. Compare the resume’s skills (technical and soft), work experience, education, and "
             "certifications against the job’s requirements. Prioritize key responsibilities, qualifications, and tools explicitly "
-            "mentioned in the job description. If the resume or job description is vague or incomplete, note any assumptions or "
-            "uncertainties in the analysis. Provide a structured response with the following sections:\n\n"
+            "mentioned in the job description. If the resume or job description is lengthy, focus on the most relevant sections "
+            "(e.g., recent experience, key skills). If inputs are vague or incomplete, note any assumptions or uncertainties. "
+            "Provide a structured response with the following sections:\n\n"
             "### 1. OVERALL FIT\n"
             "A concise paragraph (3-5 sentences) summarizing the degree of alignment between the resume and job description. "
             "Highlight the strongest areas of match and any critical gaps.\n\n"
@@ -81,7 +85,7 @@ class ResumeMatcher:
             "### 3. GAPS / MISSING INFORMATION\n"
             "- Bullet points identifying key responsibilities, qualifications, skills, or tools from the job description that are "
             "missing or insufficiently addressed in the resume.\n"
-            "- Note if any gaps are due to unclear or incomplete information in either document.\n\n"
+            "- Note if any gaps are due to unclear, incomplete, or overly lengthy inputs.\n\n"
             "### 4. SUGGESTIONS\n"
             "- Specific, actionable recommendations to improve the resume’s alignment with the job description.\n"
             "- Suggest adding, rephrasing, or emphasizing specific skills, experiences, or keywords.\n"
