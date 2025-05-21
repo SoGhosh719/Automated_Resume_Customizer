@@ -1,6 +1,6 @@
 import streamlit as st
 from resume_parser import extract_resume_text
-from utils import generate_custom_resume, compute_match_score
+from utils import review_resume_for_job_fit, compute_match_score
 from fpdf import FPDF
 import unicodedata
 from io import BytesIO
@@ -31,10 +31,10 @@ def get_pdf_download_button(text, filename):
         pdf.multi_cell(0, 10, line)
 
     pdf_bytes = pdf.output(dest='S').encode('latin-1')  # Fix: Generate PDF as string
-    buffer = BytesIO(pdf_bytes)  # Wrap string in BytesIO for Streamlit
+    buffer = BytesIO(pdf_bytes)
 
     st.download_button(
-        label="📥 Download Customized Resume as PDF",
+        label="📥 Download Evaluation as PDF",
         data=buffer,
         file_name=filename,
         mime="application/pdf"
@@ -42,27 +42,27 @@ def get_pdf_download_button(text, filename):
 
 # ---------- MAIN APP LOGIC ----------
 if resume_file and job_description:
-    with st.spinner("⏳ Tailoring your resume..."):
+    with st.spinner("⏳ Analyzing your resume..."):
         try:
             resume_text = extract_resume_text(resume_file)
-            tailored_resume = generate_custom_resume(resume_text, job_description)
 
-            if tailored_resume.startswith("⚠️ Error"):
-                st.error(tailored_resume)
-            else:
-                score = compute_match_score(resume_text, job_description)
+            # Get LLM-based review
+            evaluation = review_resume_for_job_fit(resume_text, job_description)
 
-                st.markdown("### 🌟 Resume vs Job Description Match")
-                st.metric(label="Match Score", value=f"{score:.2f}%")
+            # Get TF-IDF score
+            score = compute_match_score(resume_text, job_description)
 
-                st.markdown("### 📝 Customized Resume Output")
-                st.text_area("Tailored Resume", value=tailored_resume, height=500)
+            st.markdown("### 🌟 Resume vs Job Description Match")
+            st.metric(label="Match Score", value=f"{score:.2f}%")
 
-                get_pdf_download_button(tailored_resume, "Customized_Resume.pdf")
+            st.markdown("### 🧠 AI Evaluation of Resume Fit")
+            st.markdown(evaluation)
+
+            get_pdf_download_button(evaluation, "Resume_Evaluation.pdf")
 
         except Exception as e:
-            st.error("❌ An unexpected error occurred.")
-            st.text(traceback.format_exc())  # Show traceback for dev/debugging
+            st.error("❌ An unexpected error occurred during processing.")
+            st.text(traceback.format_exc())
 
 elif resume_file and not job_description:
     st.warning("⚠️ Please paste the job description to begin analysis.")
