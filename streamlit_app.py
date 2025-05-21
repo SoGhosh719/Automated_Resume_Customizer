@@ -1,8 +1,13 @@
 import streamlit as st
+import logging
 from utils import ResumeMatcher
 from fpdf import FPDF
 from io import BytesIO
 import unicodedata
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Page config
 st.set_page_config(page_title="AI Resume Customizer", layout="wide")
@@ -42,6 +47,7 @@ def main():
                 st.text_area("Resume Text", resume_text, height=150, disabled=True)
         except ValueError as ve:
             st.error(f"❌ {str(ve)}")
+            logger.error(f"Resume extraction error: {str(ve)}")
             return
 
     if job_description:
@@ -54,6 +60,7 @@ def main():
                 # Additional job description validation
                 if len(job_description.strip()) < 50:
                     st.error("❌ Job description is too short. Please provide at least 50 characters.")
+                    logger.warning("Job description too short")
                     return
                 resume_text = matcher.extract_resume_text(resume_file)
                 matcher.validate_input(resume_text, job_description)
@@ -72,9 +79,10 @@ def main():
                 )
             except ValueError as ve:
                 st.error(f"❌ {str(ve)}")
+                logger.error(f"Validation error: {str(ve)}")
             except Exception as e:
                 st.error("❌ An unexpected error occurred during analysis. Please try again later or contact support.")
-                logger.error(f"Unexpected error: {str(e)}")
+                logger.error(f"Analysis error: {str(e)}", exc_info=True)
 
     elif resume_file:
         st.warning("⚠️ Please paste the job description to begin analysis.")
