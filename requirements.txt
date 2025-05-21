@@ -1,11 +1,7 @@
-streamlit>=1.22
-scikit-learn>=1.2
-fpdf>=1.7.2
-PyPDF2>=3.0.0
-python-docx>=0.8.11
-huggingface_hub>=0.17.3
-unicodedata2>=15.1.0
-
-# Optional: for alternate resume text extraction methods
-pdfplumber>=0.9.0
-textract>=1.6.5
+streamlit
+scikit-learn
+fpdf
+PyPDF2
+python-docx
+huggingface_hub
+unicodedata2
