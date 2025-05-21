@@ -2,13 +2,17 @@ import PyPDF2
 import docx
 
 def extract_text_from_pdf(file):
+    file.seek(0)  # Ensure pointer is at start
     pdf = PyPDF2.PdfReader(file)
     text = ""
     for page in pdf.pages:
-        text += page.extract_text()
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text
     return text
 
 def extract_text_from_docx(file):
+    file.seek(0)  # Required for in-memory files
     doc = docx.Document(file)
     text = "\n".join([para.text for para in doc.paragraphs])
     return text
