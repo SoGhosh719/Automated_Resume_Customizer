@@ -98,6 +98,7 @@ Job Description:
             logger.error(f"API call failed: {str(e)}")
             raise
 
+    @st.cache_data
     def compute_match_score(self, resume_text, job_description):
         """Compute match score using TF-IDF and semantic similarity."""
         try:
@@ -115,8 +116,11 @@ Job Description:
             return 0.0
 
     def extract_resume_text(self, resume_file):
-        """Extract text from PDF or DOCX resume."""
+        """Extract text from PDF or DOCX resume with file size validation."""
         try:
+            # Validate file size (max 5MB)
+            if resume_file.size > 5 * 1024 * 1024:
+                raise ValueError("File size exceeds 5MB limit.")
             if resume_file.type == "application/pdf":
                 pdf_reader = PyPDF2.PdfReader(resume_file)
                 text = "".join(page.extract_text() or "" for page in pdf_reader.pages)
